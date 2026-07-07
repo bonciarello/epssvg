@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Convertitore EPS in SVG — Punto Vettore | Conversione vettoriale online</title>
+  <meta name="description" content="Converti file EPS in SVG puro con parsing server-side Python. Carica il tuo EPS, ottieni un&#39;anteprima vettoriale e scarica l&#39;SVG — tutto elaborato localmente, senza rasterizzazione.">
+  <link rel="canonical" href="https://cristianporco.it/app/convertitore-di-file-eps-in-svg-con-parsing-server-side/">
+  <base href="./">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Convertitore EPS in SVG — Punto Vettore">
+  <meta property="og:description" content="Converti file EPS in SVG con parsing server-side. Anteprima vettoriale e download diretto.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://cristianporco.it/app/convertitore-di-file-eps-in-svg-con-parsing-server-side/">
+
+  <!-- JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Punto Vettore — Convertitore EPS in SVG",
+    "url": "https://cristianporco.it/app/convertitore-di-file-eps-in-svg-con-parsing-server-side/",
+    "description": "Strumento online per convertire file EPS (Encapsulated PostScript) in SVG vettoriale tramite parsing server-side in Python.",
+    "applicationCategory": "Multimedia",
+    "operatingSystem": "All",
+    "browserRequirements": "HTML5, JavaScript"
+  }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=JetBrains+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+
+  <style>
+    /* ── Design tokens ─────────────────────────────────────────── */
+    :root {
+      --paper:        #FCFDFD;
+      --tint:         #F2F4F8;
+      --ink:          #1B1E24;
+      --lead:         #5A6272;
+      --cyan:         #1565D9;
+      --magenta:      #E8315B;
+      --green:        #0CA868;
+      --amber:        #F5A623;
+      --hairline:     #DDE1E8;
+      --hairline-alt: #C8CDD6;
+      --focus-ring:   #1565D9;
+      --error-bg:     #FEF2F2;
+      --error-border: #FECACA;
+      --error-text:   #991B1B;
+      --success-bg:   #F0FDF4;
+      --radius-sm:    6px;
+      --radius-md:    10px;
+      --radius-lg:    16px;
+      --font-display: 'DM Serif Display', Georgia, 'Times New Roman', serif;
+      --font-body:    'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono:    'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+      --shadow-sm:    0 1px 2px rgba(27,30,36,0.06);
+      --shadow-md:    0 4px 12px rgba(27,30,36,0.08);
+      --shadow-lg:    0 12px 32px rgba(27,30,36,0.10);
+    }
+
+    /* ── Reset & base ──────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      font-size: 16px;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--paper);
+      color: var(--ink);
+      line-height: 1.55;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Focus ─────────────────────────────────────────────────── */
+    :focus-visible {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+
+    /* ── Reduced motion ────────────────────────────────────────── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* ── Layout ────────────────────────────────────────────────── */
+    .app {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 16px 16px 32px;
+      width: 100%;
+      flex: 1;
+    }
+
+    /* ── Header ────────────────────────────────────────────────── */
+    .header {
+      padding: 20px 0 8px;
+      border-bottom: 1px solid var(--hairline);
+      margin-bottom: 24px;
+    }
+
+    .header-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--magenta);
+      margin-bottom: 4px;
+    }
+
+    .header h1 {
+      font-family: var(--font-display);
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+      font-weight: 400;
+      color: var(--ink);
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+    }
+
+    .header h1 em {
+      font-style: italic;
+      color: var(--cyan);
+    }
+
+    .header-sub {
+      font-size: 0.95rem;
+      color: var(--lead);
+      margin-top: 4px;
+      max-width: 52ch;
+    }
+
+    /* ── Registration mark (signature element) ─────────────────── */
+    .reg-mark {
+      position: absolute;
+      pointer-events: none;
+      opacity: 0.12;
+      transition: opacity 0.4s ease;
+    }
+
+    .reg-mark circle { fill: none; stroke: var(--cyan); stroke-width: 1; }
+    .reg-mark line   { stroke: var(--cyan); stroke-width: 1; }
+
+    .dropzone.active .reg-mark {
+      opacity: 0.35;
+    }
+    .dropzone.has-file .reg-mark {
+      opacity: 0.22;
+      stroke: var(--green);
+    }
+    .dropzone.has-file .reg-mark circle,
+    .dropzone.has-file .reg-mark line {
+      stroke: var(--green);
+    }
+
+    .reg-mark--tl { top: -20px;   left: -20px; }
+    .reg-mark--tr { top: -20px;   right: -20px; }
+    .reg-mark--bl { bottom: -20px; left: -20px; }
+    .reg-mark--br { bottom: -20px; right: -20px; }
+
+    /* ── Drop zone ─────────────────────────────────────────────── */
+    .dropzone-wrapper {
+      position: relative;
+      margin-bottom: 24px;
+    }
+
+    .dropzone {
+      position: relative;
+      border: 2px dashed var(--hairline-alt);
+      border-radius: var(--radius-lg);
+      background: var(--tint);
+      padding: 36px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+      min-height: 180px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .dropzone:hover {
+      border-color: var(--cyan);
+      background: #EEF3FA;
+    }
+    .dropzone.active {
+      border-color: var(--cyan);
+      background: #E8F0FC;
+      border-style: solid;
+      transform: scale(1.008);
+    }
+    .dropzone.has-file {
+      border-color: var(--green);
+      border-style: solid;
+      background: #F0FDF4;
+    }
+    .dropzone.error-state {
+      border-color: var(--error-border);
+      border-style: solid;
+      background: var(--error-bg);
+    }
+
+    .dropzone-icon {
+      width: 48px;
+      height: 48px;
+      color: var(--hairline-alt);
+      transition: color 0.2s ease, transform 0.2s ease;
+    }
+    .dropzone:hover .dropzone-icon,
+    .dropzone.active .dropzone-icon {
+      color: var(--cyan);
+    }
+    .dropzone.has-file .dropzone-icon {
+      color: var(--green);
+      transform: scale(1.05);
+    }
+
+    .dropzone-text {
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: var(--ink);
+    }
+
+    .dropzone-hint {
+      font-size: 0.85rem;
+      color: var(--lead);
+    }
+
+    .dropzone-file-name {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--lead);
+      background: rgba(255,255,255,0.7);
+      padding: 4px 12px;
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dropzone-file-name svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    /* Hidden input */
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* ── Buttons ───────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      font-weight: 600;
+      line-height: 1;
+      padding: 12px 24px;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      min-height: 44px;
+      min-width: 44px;
+      transition: background 0.2s ease, transform 0.12s ease, box-shadow 0.15s ease;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn--primary {
+      background: var(--cyan);
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(21,101,217,0.25);
+    }
+    .btn--primary:hover { background: #1258BF; box-shadow: 0 4px 12px rgba(21,101,217,0.30); }
+
+    .btn--success {
+      background: var(--green);
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(12,168,104,0.25);
+    }
+    .btn--success:hover { background: #0A8F58; }
+
+    .btn--outline {
+      background: transparent;
+      color: var(--cyan);
+      border: 1.5px solid var(--cyan);
+    }
+    .btn--outline:hover { background: #EEF3FA; }
+
+    .btn--ghost {
+      background: transparent;
+      color: var(--lead);
+      padding: 8px 12px;
+    }
+    .btn--ghost:hover { background: var(--tint); color: var(--ink); }
+
+    .btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+    /* ── Actions bar ────────────────────────────────────────────── */
+    .actions-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+      padding: 12px 0;
+    }
+
+    .actions-bar .btn--primary {
+      margin-left: auto;
+    }
+
+    /* ── Preview area ──────────────────────────────────────────── */
+    .preview-section {
+      background: #fff;
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 20px;
+    }
+
+    .preview-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: var(--tint);
+      border-bottom: 1px solid var(--hairline);
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--lead);
+    }
+
+    .preview-header .file-info {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+    }
+
+    .preview-header .tab-btn {
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--lead);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px 10px;
+      border-radius: 4px;
+      min-height: 32px;
+      transition: background 0.15s, color 0.15s;
+      margin-left: auto;
+    }
+    .preview-header .tab-btn:hover { background: rgba(0,0,0,0.05); }
+    .preview-header .tab-btn.active { color: var(--cyan); background: rgba(21,101,217,0.08); }
+
+    .preview-canvas {
+      padding: 16px;
+      min-height: 260px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: repeating-conic-gradient(var(--tint) 0% 25%, transparent 0% 50%) 50% / 20px 20px;
+    }
+
+    .preview-canvas img,
+    .preview-canvas object {
+      max-width: 100%;
+      max-height: 460px;
+      border-radius: 4px;
+      box-shadow: var(--shadow-sm);
+      background: #fff;
+    }
+
+    .preview-code {
+      padding: 16px;
+      background: #F8F9FB;
+      overflow: auto;
+      max-height: 420px;
+      display: none;
+    }
+    .preview-code pre {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-all;
+      color: var(--ink);
+      margin: 0;
+    }
+
+    .preview-code.visible { display: block; }
+    .preview-canvas.hidden  { display: none; }
+
+    /* ── Empty state ────────────────────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .empty-state-icon {
+      width: 56px;
+      height: 56px;
+      color: var(--hairline-alt);
+      margin-bottom: 12px;
+    }
+
+    .empty-state h2 {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      color: var(--lead);
+      font-weight: 400;
+      margin-bottom: 4px;
+    }
+
+    .empty-state p {
+      font-size: 0.9rem;
+      color: var(--lead);
+      max-width: 40ch;
+      margin: 0 auto;
+    }
+
+    /* ── Error alert ────────────────────────────────────────────── */
+    .alert {
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      line-height: 1.5;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .alert--error {
+      background: var(--error-bg);
+      border: 1px solid var(--error-border);
+      color: var(--error-text);
+    }
+    .alert--error svg { flex-shrink: 0; width: 20px; height: 20px; margin-top: 1px; color: #DC2626; }
+
+    /* ── Spinner ────────────────────────────────────────────────── */
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--hairline);
+      border-top-color: var(--cyan);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(252,253,253,0.75);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-lg);
+      z-index: 2;
+      backdrop-filter: blur(2px);
+    }
+
+    /* ── Footer ─────────────────────────────────────────────────── */
+    .footer {
+      border-top: 1px solid var(--hairline);
+      padding: 12px 0;
+      margin-top: auto;
+      font-size: 0.78rem;
+      color: var(--lead);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .footer a {
+      color: var(--lead);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .footer a:hover { color: var(--ink); }
+
+    /* ── Responsive ─────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .app { padding: 8px 12px 24px; }
+      .dropzone { padding: 28px 16px; min-height: 140px; }
+      .dropzone-text { font-size: 0.95rem; }
+      .actions-bar { flex-direction: column; align-items: stretch; }
+      .actions-bar .btn--primary { margin-left: 0; }
+      .preview-canvas { padding: 8px; }
+      .preview-canvas img, .preview-canvas object { max-height: 280px; }
+      .reg-mark { display: none; }
+      .header { padding: 12px 0 4px; }
+    }
+
+    @media (min-width: 601px) and (max-width: 900px) {
+      .app { padding: 12px 20px 28px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <!-- ── Header ──────────────────────────────────────────────── -->
+    <header class="header">
+      <p class="header-eyebrow">PostScript &rarr; SVG</p>
+      <h1>Punto <em>Vettore</em></h1>
+      <p class="header-sub">
+        Converti i tuoi file EPS in SVG puro. Il parsing avviene interamente lato server in Python —
+        nessuna rasterizzazione, solo vettore.
+      </p>
+    </header>
+
+    <!-- ── Drop zone ───────────────────────────────────────────── -->
+    <div class="dropzone-wrapper" id="dropzoneWrapper">
+      <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Carica un file EPS — trascinalo qui o clicca per selezionarlo">
+        <!-- Registration marks (signature element) -->
+        <svg class="reg-mark reg-mark--tl" width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
+          <circle cx="12" cy="12" r="8"/>
+          <line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
+          <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
+        </svg>
+        <svg class="reg-mark reg-mark--tr" width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
+          <circle cx="24" cy="12" r="8"/>
+          <line x1="14" y1="12" x2="18" y2="12"/><line x1="30" y1="12" x2="34" y2="12"/>
+          <line x1="24" y1="2" x2="24" y2="6"/><line x1="24" y1="18" x2="24" y2="22"/>
+        </svg>
+        <svg class="reg-mark reg-mark--bl" width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
+          <circle cx="12" cy="24" r="8"/>
+          <line x1="2" y1="24" x2="6" y2="24"/><line x1="18" y1="24" x2="22" y2="24"/>
+          <line x1="12" y1="14" x2="12" y2="18"/><line x1="12" y1="30" x2="12" y2="34"/>
+        </svg>
+        <svg class="reg-mark reg-mark--br" width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
+          <circle cx="24" cy="24" r="8"/>
+          <line x1="14" y1="24" x2="18" y2="24"/><line x1="30" y1="24" x2="34" y2="24"/>
+          <line x1="24" y1="14" x2="24" y2="18"/><line x1="24" y1="30" x2="24" y2="34"/>
+        </svg>
+
+        <svg class="dropzone-icon" id="dzIcon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <rect x="6" y="8" width="36" height="32" rx="4" stroke-linecap="round"/>
+          <path d="M6 20h36" stroke-linecap="round"/>
+          <circle cx="13" cy="14" r="2" fill="currentColor" stroke="none"/>
+          <circle cx="19" cy="14" r="2" fill="currentColor" stroke="none"/>
+          <circle cx="25" cy="14" r="2" fill="currentColor" stroke="none"/>
+          <path d="M18 38l6-10 4 6 3-3 4 7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+
+        <div id="dropzoneContent">
+          <p class="dropzone-text">Trascina qui il tuo file EPS</p>
+          <p class="dropzone-hint">oppure clicca per selezionarlo — .eps, .epsf, .epsi</p>
+        </div>
+
+        <div id="fileInfo" style="display:none;">
+          <p class="dropzone-file-name" id="fileNameDisplay"></p>
+        </div>
+
+        <input type="file" id="fileInput" class="visually-hidden" accept=".eps,.epsf,.epsi">
+      </div>
+
+      <!-- Loading overlay -->
+      <div class="loading-overlay" id="loadingOverlay" style="display:none;" aria-live="polite" aria-label="Conversione in corso">
+        <div class="spinner"></div>
+      </div>
+    </div>
+
+    <!-- ── Error ────────────────────────────────────────────────── -->
+    <div class="alert alert--error" id="errorAlert" style="display:none;" role="alert">
+      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM8.28 7.22a.75.75 0 0 0-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 1 0 1.06 1.06L10 11.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L11.06 10l1.72-1.72a.75.75 0 0 0-1.06-1.06L10 8.94 8.28 7.22Z" clip-rule="evenodd"/></svg>
+      <span id="errorMessage"></span>
+    </div>
+
+    <!-- ── Actions bar ──────────────────────────────────────────── -->
+    <div class="actions-bar" id="actionsBar" style="display:none;">
+      <button class="btn btn--ghost" id="btnNewFile" type="button">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z"/></svg>
+        Nuovo file
+      </button>
+      <button class="btn btn--success" id="btnDownload" type="button">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 3a.75.75 0 0 1 .75.75v7.94l1.97-1.97a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L6.22 10.78a.75.75 0 0 1 1.06-1.06l1.97 1.97V3.75A.75.75 0 0 1 10 3Z" clip-rule="evenodd"/><path d="M3.25 14.25a.75.75 0 0 0 0 1.5h13.5a.75.75 0 0 0 0-1.5h-13.5Z"/></svg>
+        Scarica SVG
+      </button>
+    </div>
+
+    <!-- ── Preview ──────────────────────────────────────────────── -->
+    <section class="preview-section" id="previewSection" aria-label="Anteprima SVG">
+      <div class="preview-header" id="previewHeader">
+        <span class="file-info" id="previewFileInfo">Nessun file convertito</span>
+        <button class="tab-btn active" id="tabPreview" type="button">Anteprima</button>
+        <button class="tab-btn" id="tabCode" type="button">Codice SVG</button>
+      </div>
+      <div class="preview-canvas" id="previewCanvas">
+        <div class="empty-state" id="emptyState">
+          <svg class="empty-state-icon" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <rect x="8" y="12" width="40" height="32" rx="4"/>
+            <path d="M8 24h40M20 16l4 16 6-10 4 10 6-16"/>
+          </svg>
+          <h2>La tua anteprima apparirà qui</h2>
+          <p>Carica un file EPS e il convertitore estrarrà i percorsi vettoriali, generando un SVG pulito e scalabile.</p>
+        </div>
+        <img id="previewImage" src="" alt="Anteprima SVG del file EPS convertito" style="display:none;" width="800" height="600">
+      </div>
+      <div class="preview-code" id="previewCode">
+        <pre id="previewCodeContent"></pre>
+      </div>
+    </section>
+
+    <!-- ── Footer ──────────────────────────────────────────────── -->
+    <footer class="footer">
+      <span>Parsing server-side in Python &middot; nessun file inviato a terzi</span>
+      <span><a href="https://cristianporco.it/" rel="noopener">cristianporco.it</a></span>
+    </footer>
+  </main>
+
+  <script>
+    /* ────────────────────────────────────────────────────────────────
+       Punto Vettore — EPS→SVG converter frontend
+       ──────────────────────────────────────────────────────────────── */
+
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => document.querySelectorAll(sel);
+
+    // DOM refs
+    const dropzone    = $("#dropzone");
+    const dzWrapper   = $("#dropzoneWrapper");
+    const dzIcon      = $("#dzIcon");
+    const dzContent   = $("#dropzoneContent");
+    const fileInfo    = $("#fileInfo");
+    const fileNameDisp = $("#fileNameDisplay");
+    const fileInput   = $("#fileInput");
+    const loadingOv   = $("#loadingOverlay");
+    const errorAlert  = $("#errorAlert");
+    const errorMsg    = $("#errorMessage");
+    const actionsBar  = $("#actionsBar");
+    const btnNewFile  = $("#btnNewFile");
+    const btnDownload = $("#btnDownload");
+    const previewSec  = $("#previewSection");
+    const previewHdr  = $("#previewHeader");
+    const previewFI   = $("#previewFileInfo");
+    const previewCanvas = $("#previewCanvas");
+    const previewImg  = $("#previewImage");
+    const previewCode = $("#previewCode");
+    const previewCodeContent = $("#previewCodeContent");
+    const emptyState  = $("#emptyState");
+    const tabPreview  = $("#tabPreview");
+    const tabCode     = $("#tabCode");
+
+    let currentSvgContent = "";
+    let currentFilename   = "converted.svg";
+
+    // ── Drag & drop handlers ────────────────────────────────────────
+    function handleDrag(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    dropzone.addEventListener("dragenter", (e) => {
+      handleDrag(e);
+      dropzone.classList.add("active");
+    });
+
+    dropzone.addEventListener("dragover", (e) => {
+      handleDrag(e);
+      dropzone.classList.add("active");
+    });
+
+    dropzone.addEventListener("dragleave", (e) => {
+      handleDrag(e);
+      dropzone.classList.remove("active");
+    });
+
+    dropzone.addEventListener("drop", (e) => {
+      handleDrag(e);
+      dropzone.classList.remove("active");
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        handleFile(files[0]);
+      }
+    });
+
+    // ── Click / keyboard ────────────────────────────────────────────
+    dropzone.addEventListener("click", () => {
+      fileInput.click();
+    });
+
+    dropzone.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        fileInput.click();
+      }
+    });
+
+    fileInput.addEventListener("change", () => {
+      if (fileInput.files.length > 0) {
+        handleFile(fileInput.files[0]);
+      }
+    });
+
+    // ── File handling ───────────────────────────────────────────────
+    function handleFile(file) {
+      const name = file.name.toLowerCase();
+      if (!name.endsWith(".eps") && !name.endsWith(".epsf") && !name.endsWith(".epsi")) {
+        showError("Formato non supportato. Carica un file .eps, .epsf o .epsi.");
+        dropzone.classList.add("error-state");
+        setTimeout(() => dropzone.classList.remove("error-state"), 2000);
+        return;
+      }
+
+      hideError();
+      showLoading(true);
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      fetch("api/convert", {
+        method: "POST",
+        body: formData,
+      })
+        .then(async (res) => {
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data.error || "Errore sconosciuto dal server.");
+          }
+          return data;
+        })
+        .then((data) => {
+          showLoading(false);
+          handleSuccess(data, file.name);
+        })
+        .catch((err) => {
+          showLoading(false);
+          showError(err.message);
+          dropzone.classList.add("error-state");
+          setTimeout(() => dropzone.classList.remove("error-state"), 2500);
+        });
+    }
+
+    function handleSuccess(data, originalName) {
+      currentSvgContent = data.svg;
+      currentFilename = data.filename || originalName.replace(/\.\w+$/, ".svg");
+
+      // Update dropzone state
+      dropzone.classList.add("has-file");
+      dropzone.classList.remove("error-state");
+      dzContent.style.display = "none";
+      fileInfo.style.display = "";
+      fileNameDisp.innerHTML = `<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M7 1v8M3 5l4-4 4 4"/></svg> ${escapeHtml(originalName)}`;
+
+      // Show actions
+      actionsBar.style.display = "flex";
+
+      // Update preview
+      emptyState.style.display = "none";
+      previewImg.style.display = "";
+
+      // Create blob URL for SVG preview
+      const blob = new Blob([currentSvgContent], { type: "image/svg+xml" });
+      const url = URL.createObjectURL(blob);
+      if (previewImg.src && previewImg.src.startsWith("blob:")) {
+        URL.revokeObjectURL(previewImg.src);
+      }
+      previewImg.src = url;
+
+      // Update file info
+      previewFI.textContent = `${currentFilename}  ·  ${data.width.toFixed(0)}×${data.height.toFixed(0)}`;
+
+      // Set width/height attributes on img for CLS
+      previewImg.setAttribute("width", Math.round(data.width));
+      previewImg.setAttribute("height", Math.round(data.height));
+
+      // Update code view
+      previewCodeContent.textContent = currentSvgContent;
+
+      // Ensure preview tab is active
+      setActiveTab("preview");
+
+      dropzone.setAttribute("aria-label",
+        `File caricato: ${originalName}. Clicca per cambiare file.`);
+    }
+
+    // ── Error handling ──────────────────────────────────────────────
+    function showError(message) {
+      errorMsg.textContent = message;
+      errorAlert.style.display = "flex";
+      errorAlert.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function hideError() {
+      errorAlert.style.display = "none";
+    }
+
+    // ── Loading ─────────────────────────────────────────────────────
+    function showLoading(show) {
+      loadingOv.style.display = show ? "flex" : "none";
+      if (show) {
+        hideError();
+      }
+    }
+
+    // ── Tab switching ───────────────────────────────────────────────
+    tabPreview.addEventListener("click", () => setActiveTab("preview"));
+    tabCode.addEventListener("click", () => setActiveTab("code"));
+
+    function setActiveTab(tab) {
+      if (tab === "preview") {
+        tabPreview.classList.add("active");
+        tabCode.classList.remove("active");
+        previewCanvas.classList.remove("hidden");
+        previewCode.classList.remove("visible");
+      } else {
+        tabCode.classList.add("active");
+        tabPreview.classList.remove("active");
+        previewCanvas.classList.add("hidden");
+        previewCode.classList.add("visible");
+      }
+    }
+
+    // ── New file ────────────────────────────────────────────────────
+    btnNewFile.addEventListener("click", () => {
+      resetUI();
+      hideError();
+      fileInput.click();
+    });
+
+    // ── Download ────────────────────────────────────────────────────
+    btnDownload.addEventListener("click", () => {
+      if (!currentSvgContent) return;
+      const blob = new Blob([currentSvgContent], { type: "image/svg+xml" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = currentFilename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+
+    // ── Reset ───────────────────────────────────────────────────────
+    function resetUI() {
+      dropzone.classList.remove("has-file", "error-state");
+      dzContent.style.display = "";
+      fileInfo.style.display = "none";
+      actionsBar.style.display = "none";
+      emptyState.style.display = "";
+      previewImg.style.display = "none";
+      if (previewImg.src && previewImg.src.startsWith("blob:")) {
+        URL.revokeObjectURL(previewImg.src);
+      }
+      previewImg.src = "";
+      previewFI.textContent = "Nessun file convertito";
+      previewCodeContent.textContent = "";
+      currentSvgContent = "";
+      currentFilename = "converted.svg";
+      dropzone.setAttribute("aria-label",
+        "Carica un file EPS — trascinalo qui o clicca per selezionarlo");
+      tabPreview.classList.add("active");
+      tabCode.classList.remove("active");
+      previewCanvas.classList.remove("hidden");
+      previewCode.classList.remove("visible");
+      fileInput.value = "";
+    }
+
+    // ── Utility ─────────────────────────────────────────────────────
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // ── Global paste handler ────────────────────────────────────────
+    document.addEventListener("paste", (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.kind === "file") {
+          const file = item.getAsFile();
+          if (file) {
+            e.preventDefault();
+            handleFile(file);
+            return;
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
