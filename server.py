@@ -597,7 +597,7 @@ def robots_txt():
     return (
         "User-agent: *\n"
         "Allow: /\n"
-        "Sitemap: https://cristianporco.it/app/"
+        "Sitemap: https://github.com/bonciarello/"
         "convertitore-di-file-eps-in-svg-con-parsing-server-side/sitemap.xml\n"
     ), 200, {"Content-Type": "text/plain"}
 
@@ -608,7 +608,7 @@ def sitemap_xml():
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
         "  <url>\n"
-        "    <loc>https://cristianporco.it/app/convertitore-di-file-eps-in-svg-con-parsing-server-side/</loc>\n"
+        "    <loc>https://github.com/bonciarello/convertitore-di-file-eps-in-svg-con-parsing-server-side/</loc>\n"
         "    <changefreq>monthly</changefreq>\n"
         "    <priority>0.8</priority>\n"
         "  </url>\n"
